@@ -7,7 +7,7 @@ BEGIN
     -- Mentor
     INSERT INTO auth.users (id, instance_id, email, aud, encrypted_password, email_confirmed_at, raw_app_meta_data, raw_user_meta_data, created_at, updated_at, role)
     VALUES (
-        mentor_id, '00000000-0000-0000-0000-000000000000', 'nischay@theboringpeople.in', 'authenticated', crypt('password123', gen_salt('bf')), NOW(), '{"provider":"email","providers":["email"]}', '{}', NOW(), NOW(), 'authenticated',
+        mentor_id, '00000000-0000-0000-0000-000000000000', 'nischay@theboringpeople.in', 'authenticated', crypt('password123', gen_salt('bf')), NOW(), '{"provider":"email","providers":["email"]}', '{}', NOW(), NOW(), 'authenticated'
     );
 
     INSERT INTO auth.identities (id, user_id, provider_id, provider, identity_data, created_at, updated_at)

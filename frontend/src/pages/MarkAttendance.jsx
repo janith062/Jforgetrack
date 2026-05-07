@@ -16,8 +16,10 @@ export default function MarkAttendance() {
   const navigate = useNavigate();
 
   const [date, setDate] = useState(new Date().toLocaleDateString('en-CA'));
+  const [sessions, setSessions] = useState([]);
   const [session, setSession] = useState(null);
-  const [loadingSession, setLoadingSession] = useState(false);
+  const [loadingSessions, setLoadingSessions] = useState(false);
+  const [showCreateForm, setShowCreateForm] = useState(false);
   
   // Create Session Form
   const [newTopic, setNewTopic] = useState('');
@@ -32,27 +34,32 @@ export default function MarkAttendance() {
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
-    fetchSession(date);
+    fetchSessions(date);
   }, [date]);
 
-  const fetchSession = async (selectedDate) => {
-    setLoadingSession(true);
+  const fetchSessions = async (selectedDate) => {
+    setLoadingSessions(true);
+    setSessions([]);
     setSession(null);
     setStudents([]);
     setAttendance({});
     setInitialAttendance({});
 
-    const { data: sessionData } = await supabase
+    const { data: sessionsData } = await supabase
       .from('sessions')
       .select('*')
       .eq('date', selectedDate)
-      .single();
+      .order('created_at', { ascending: false });
 
-    if (sessionData) {
-      setSession(sessionData);
-      await fetchStudentsAndAttendance(sessionData.id);
+    if (sessionsData && sessionsData.length > 0) {
+      setSessions(sessionsData);
+      setSession(sessionsData[0]);
+      await fetchStudentsAndAttendance(sessionsData[0].id);
+      setShowCreateForm(false);
+    } else {
+      setShowCreateForm(true);
     }
-    setLoadingSession(false);
+    setLoadingSessions(false);
   };
 
   const fetchStudentsAndAttendance = async (sessionId) => {
@@ -76,7 +83,7 @@ export default function MarkAttendance() {
   };
 
   const handleCreateSession = async () => {
-    const monthNumber = new Date(date).getMonth() + 1; // Basic calculation for month
+    const monthNumber = new Date(date).getMonth() + 1;
     const { data, error } = await supabase
       .from('sessions')
       .insert({
@@ -93,8 +100,21 @@ export default function MarkAttendance() {
       addToast('Error', error.message, 'danger');
     } else {
       addToast('Success', 'Session created', 'success');
+      setSessions(prev => [data, ...prev]);
       setSession(data);
+      setNewTopic('');
+      setShowCreateForm(false);
       await fetchStudentsAndAttendance(data.id);
+    }
+  };
+
+  const handleSessionChange = async (sessionId) => {
+    const selected = sessions.find(s => s.id === parseInt(sessionId));
+    if (selected) {
+      setSession(selected);
+      setAttendance({});
+      setInitialAttendance({});
+      await fetchStudentsAndAttendance(selected.id);
     }
   };
 
@@ -172,26 +192,47 @@ export default function MarkAttendance() {
             className="w-full md:w-auto mb-0"
           />
           
-          <div className="flex-1 flex items-center h-11 px-4 bg-surface-inset rounded-md border border-border-default">
-            {loadingSession ? (
-              <span className="text-body text-fg-tertiary">Loading session...</span>
-            ) : session ? (
-              <div className="flex items-center justify-between w-full">
-                <span className="text-body font-semibold text-fg-primary">{session.topic}</span>
-                <div className="flex gap-2">
-                  <Pill>{session.session_type}</Pill>
-                  <Pill>{session.duration_hours}h</Pill>
+          <div className="flex-1 flex flex-col gap-2">
+            <div className={`flex items-center h-11 px-4 bg-surface-inset rounded-md border border-border-default ${!session && !loadingSessions ? 'italic text-fg-tertiary' : ''}`}>
+              {loadingSessions ? (
+                <span className="text-body text-fg-tertiary">Loading sessions...</span>
+              ) : sessions.length > 1 ? (
+                <select 
+                  className="w-full bg-transparent border-none outline-none text-body font-semibold text-fg-primary cursor-pointer"
+                  value={session?.id || ''}
+                  onChange={(e) => handleSessionChange(e.target.value)}
+                >
+                  {sessions.map(s => (
+                    <option key={s.id} value={s.id}>{s.topic} ({s.session_type})</option>
+                  ))}
+                </select>
+              ) : session ? (
+                <div className="flex items-center justify-between w-full">
+                  <span className="text-body font-semibold text-fg-primary">{session.topic}</span>
+                  <div className="flex gap-2">
+                    <Pill>{session.session_type}</Pill>
+                    <Pill>{session.duration_hours}h</Pill>
+                  </div>
                 </div>
-              </div>
-            ) : (
-              <span className="text-body text-fg-tertiary italic">No session found for this date.</span>
+              ) : (
+                <span className="text-body">No session found for this date.</span>
+              )}
+            </div>
+            
+            {sessions.length > 0 && !loadingSessions && (
+              <button 
+                onClick={() => setShowCreateForm(!showCreateForm)}
+                className="text-caption text-accent-fg hover:text-accent-fg-hover font-medium flex items-center gap-1 self-start ml-1 transition-colors"
+              >
+                {showCreateForm ? '− Cancel New Session' : '+ Create Another Session'}
+              </button>
             )}
           </div>
         </div>
       </Card>
 
-      {!loadingSession && !session && (
-        <Card className="mb-6 !p-6 border-accent-glow shadow-[0_0_15px_rgba(99,102,241,0.1)]">
+      {!loadingSessions && showCreateForm && (
+        <Card className="mb-6 !p-6 border-accent-glow shadow-[0_0_15px_rgba(99,102,241,0.1)] animate-in slide-in-from-top-4 duration-300">
           <CardHeader label="Create Session" icon={Calendar} title="New Session Details" />
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Input label="Topic" value={newTopic} onChange={e => setNewTopic(e.target.value)} className="md:col-span-3 mb-0" placeholder="e.g. 8-Layer AI Stack" />

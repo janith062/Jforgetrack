@@ -39,7 +39,8 @@ export default function Dashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [stats, setStats] = useState({ totalSessions: '-', avgAttendance: '-', activeStudents: '-', lastSessionDate: '-' });
-  const [todaySession, setTodaySession] = useState(null);
+  const [todaySessions, setTodaySessions] = useState([]);
+  const [currentSessionIdx, setCurrentSessionIdx] = useState(0);
   const [todayAttendance, setTodayAttendance] = useState({ loading: true, data: [] });
   const [recentActivity, setRecentActivity] = useState([]);
   const [programOverview, setProgramOverview] = useState({ highest: null, lowest: null });
@@ -96,16 +97,17 @@ export default function Dashboard() {
         lowest: lowest.name !== '-' ? `${lowest.name} (${Math.round(lowest.pct)}%)` : '-' 
       });
 
-      // 2. Today's Session
-      const todays = sessions.find(s => s.date === today);
-      setTodaySession(todays || false);
+      // 2. Today's Sessions
+      const todays = sessions.filter(s => s.date === today);
+      setTodaySessions(todays);
 
-      // 3. Today's Attendance
-      if (todays) {
+      // 3. Today's Attendance (for the first session initially)
+      if (todays.length > 0) {
+        const firstSession = todays[0];
         const { data: todayAtt } = await supabase
           .from('attendance')
           .select('*, students(name, usn)')
-          .eq('session_id', todays.id);
+          .eq('session_id', firstSession.id);
         setTodayAttendance({ loading: false, data: todayAtt || [] });
       } else {
         setTodayAttendance({ loading: false, data: [] });
@@ -143,6 +145,20 @@ export default function Dashboard() {
     fetchDashboardData();
   }, []);
 
+  const handleSwitchSession = async (newIdx) => {
+    if (newIdx < 0 || newIdx >= todaySessions.length) return;
+    setCurrentSessionIdx(newIdx);
+    setTodayAttendance(prev => ({ ...prev, loading: true }));
+    
+    const session = todaySessions[newIdx];
+    const { data: att } = await supabase
+      .from('attendance')
+      .select('*, students(name, usn)')
+      .eq('session_id', session.id);
+    
+    setTodayAttendance({ loading: false, data: att || [] });
+  };
+
   return (
     <div className="max-w-[1440px] mx-auto px-6 md:px-8 lg:px-12 pt-8 pb-16 w-full animate-in fade-in duration-500">
       <div className="mb-8">
@@ -155,22 +171,45 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         {/* Today's Session */}
         <HeroCard>
-          <CardHeader label="TODAY'S SESSION" icon={Calendar} />
-          {todaySession === null ? (
-            <div className="h-24 animate-pulse bg-surface-inset rounded-lg" />
-          ) : todaySession ? (
-            <div>
-              <h2 className="text-display-sm text-fg-primary mb-4">{todaySession.topic}</h2>
-              <div className="flex gap-4 mb-8">
-                <Pill status="default">{todaySession.session_type}</Pill>
-                <Pill status="default">{todaySession.duration_hours} hrs</Pill>
-              </div>
-              <Button onClick={() => navigate('/attendance')}>Mark Attendance</Button>
-            </div>
-          ) : (
+          <CardHeader 
+            label={todaySessions.length > 1 ? `TODAY'S SESSIONS (${currentSessionIdx + 1}/${todaySessions.length})` : "TODAY'S SESSION"} 
+            icon={Calendar} 
+          />
+          {todaySessions.length === 0 ? (
             <div>
               <h2 className="text-h2 text-fg-secondary mb-6">No session scheduled for today</h2>
               <Button onClick={() => navigate('/attendance')}><Plus size={16} className="mr-2 inline" />Create Session</Button>
+            </div>
+          ) : (
+            <div>
+              <h2 className="text-display-sm text-fg-primary mb-4">{todaySessions[currentSessionIdx].topic}</h2>
+              <div className="flex gap-4 mb-8">
+                <Pill status="default">{todaySessions[currentSessionIdx].session_type}</Pill>
+                <Pill status="default">{todaySessions[currentSessionIdx].duration_hours} hrs</Pill>
+              </div>
+              <div className="flex gap-3">
+                <Button onClick={() => navigate('/attendance')}>Mark Attendance</Button>
+                {todaySessions.length > 1 && (
+                  <div className="flex gap-2 ml-auto">
+                    <Button 
+                      variant="secondary" 
+                      size="sm" 
+                      onClick={() => handleSwitchSession(currentSessionIdx - 1)}
+                      disabled={currentSessionIdx === 0}
+                    >
+                      Prev
+                    </Button>
+                    <Button 
+                      variant="secondary" 
+                      size="sm" 
+                      onClick={() => handleSwitchSession(currentSessionIdx + 1)}
+                      disabled={currentSessionIdx === todaySessions.length - 1}
+                    >
+                      Next
+                    </Button>
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </HeroCard>
@@ -180,7 +219,7 @@ export default function Dashboard() {
           <CardHeader label="TODAY'S ATTENDANCE" icon={Users} />
           {todayAttendance.loading ? (
              <div className="h-32 animate-pulse bg-surface-inset rounded-lg" />
-          ) : todaySession && todayAttendance.data.length > 0 ? (
+          ) : todaySessions.length > 0 && todayAttendance.data.length > 0 ? (
             <div>
               <div className="flex items-end gap-3 mb-4">
                 <span className="text-display-md tabular-nums">{todayAttendance.data.filter(a => a.present).length}</span>
@@ -207,7 +246,9 @@ export default function Dashboard() {
             </div>
           ) : (
             <div className="flex flex-col items-start">
-              <span className="text-h2 text-fg-secondary mb-6">Not yet marked</span>
+              <span className="text-h2 text-fg-secondary mb-6">
+                {todaySessions.length > 0 ? 'Not yet marked' : 'No session today'}
+              </span>
               <Button onClick={() => navigate('/attendance')}>Mark Now</Button>
             </div>
           )}
