@@ -1,21 +1,38 @@
-import pg from 'pg';
+import pkg from 'pg';
+const { Client } = pkg;
 
-const connectionString = 'postgresql://postgres:Shreyas@2593@db.radpjeksfeufuzmokpec.supabase.co:5432/postgres';
-const pool = new pg.Pool({ connectionString });
+const connectionString = 'postgresql://postgres:6Cvk25Fg1hxUYpNv@db.pvgcmrjgzzccfkvetnbh.supabase.co:5432/postgres';
 
-async function run() {
-  try {
-    const res = await pool.query("SELECT grantee, privilege_type FROM information_schema.role_table_grants WHERE table_name = 'users' AND table_schema = 'public'");
-    console.log(JSON.stringify(res.rows, null, 2));
+async function main() {
+    const client = new Client({ connectionString });
+    await client.connect();
+    
+    try {
+        console.log("Restoring Supabase permissions...");
+        
+        const sql = `
+            -- Grant usage to Supabase roles
+            GRANT USAGE ON SCHEMA public TO anon, authenticated, service_role;
+            GRANT ALL ON ALL TABLES IN SCHEMA public TO anon, authenticated, service_role;
+            GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated, service_role;
+            GRANT ALL ON ALL FUNCTIONS IN SCHEMA public TO anon, authenticated, service_role;
 
-    console.log("\nGranting SELECT to anon and authenticated...");
-    await pool.query("GRANT SELECT ON public.users TO anon, authenticated");
-    console.log("Grants applied.");
-  } catch (e) {
-    console.error("Error:", e);
-  } finally {
-    await pool.end();
-  }
+            -- Explicitly allow authenticator to assume roles
+            GRANT anon TO authenticator;
+            GRANT authenticated TO authenticator;
+            GRANT service_role TO authenticator;
+
+            -- Ensure postgres user has everything
+            ALTER SCHEMA public OWNER TO postgres;
+        `;
+        
+        await client.query(sql);
+        console.log("Permissions restored successfully!");
+    } catch (e) {
+        console.error("Error restoring permissions:", e);
+    } finally {
+        await client.end();
+    }
 }
 
-run();
+main();
