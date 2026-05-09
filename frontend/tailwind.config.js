@@ -7,32 +7,34 @@ export default {
   theme: {
     extend: {
       colors: {
-        void: '#07070B',
-        canvas: '#0B0B11',
+        void: '#000000',
+        canvas: '#050505',
         surface: {
-          DEFAULT: '#111118',
-          raised: '#16161F',
-          inset: '#0E0E14',
+          DEFAULT: 'rgba(20, 20, 25, 0.6)',
+          raised: 'rgba(30, 30, 40, 0.7)',
+          inset: 'rgba(10, 10, 15, 0.5)',
         },
         border: {
-          subtle: 'rgba(255,255,255,0.06)',
+          subtle: 'rgba(255,255,255,0.04)',
           default: 'rgba(255,255,255,0.10)',
           strong: 'rgba(255,255,255,0.16)',
         },
         fg: {
-          primary: '#F5F5F7',
-          secondary: '#8A8A94',
-          tertiary: '#52525B',
+          primary: '#FFFFFF',
+          secondary: '#A1A1AA',
+          tertiary: '#71717A',
         },
         accent: {
-          glow: '#6366F1',
+          glow: '#3B82F6', // Electric blue
+          purple: '#8B5CF6',
+          cyan: '#06B6D4',
         },
         success: { DEFAULT: '#10B981', bg: 'rgba(16,185,129,0.12)', border: 'rgba(16,185,129,0.25)' },
         danger:  { DEFAULT: '#F43F5E', bg: 'rgba(244,63,94,0.12)',  border: 'rgba(244,63,94,0.25)' },
         warning: { DEFAULT: '#F59E0B', bg: 'rgba(245,158,11,0.12)', border: 'rgba(245,158,11,0.25)' },
       },
       fontFamily: {
-        display: ['Satoshi', 'Inter', 'system-ui', 'sans-serif'],
+        display: ['Outfit', 'Inter', 'system-ui', 'sans-serif'],
         body:    ['Inter', 'system-ui', 'sans-serif'],
         mono:    ['JetBrains Mono', 'SF Mono', 'monospace'],
       },
@@ -49,13 +51,28 @@ export default {
         '2xl': '1.5rem',     // 24px
       },
       backgroundImage: {
-        'cosmic-glow': 'radial-gradient(ellipse 600px 300px at 50% -100px, rgba(99,102,241,0.18), rgba(99,102,241,0) 70%)',
-        'card-gradient': 'linear-gradient(180deg, rgba(255,255,255,0.02) 0%, rgba(255,255,255,0) 50%)',
-        'dot-grid': 'radial-gradient(rgba(255,255,255,0.025) 1px, transparent 1px)',
+        'cosmic-glow': 'radial-gradient(circle at 50% -20%, rgba(59, 130, 246, 0.15), rgba(139, 92, 246, 0.05) 40%, rgba(0,0,0,0) 70%)',
+        'card-gradient': 'linear-gradient(180deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0) 100%)',
+        'grid-pattern': 'linear-gradient(to right, rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.03) 1px, transparent 1px)',
+        'btn-gradient': 'linear-gradient(135deg, #3B82F6 0%, #8B5CF6 100%)',
       },
       backgroundSize: {
-        'dot-grid': '24px 24px',
+        'grid': '40px 40px',
       },
+      animation: {
+        'float': 'float 6s ease-in-out infinite',
+        'pulse-glow': 'pulse-glow 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+      },
+      keyframes: {
+        float: {
+          '0%, 100%': { transform: 'translateY(0)' },
+          '50%': { transform: 'translateY(-20px)' },
+        },
+        'pulse-glow': {
+          '0%, 100%': { opacity: 1 },
+          '50%': { opacity: .5 },
+        }
+      }
     },
   },
   plugins: [],

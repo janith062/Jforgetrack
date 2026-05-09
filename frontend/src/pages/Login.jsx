@@ -20,10 +20,60 @@ const Login = () => {
       email = `${identifier.toLowerCase()}@forge.local`;
     }
 
+    // #region agent log
+    fetch('http://127.0.0.1:7662/ingest/ff34898f-315f-4614-860e-a1a3f01603a4', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Debug-Session-Id': '5347d3'
+      },
+      body: JSON.stringify({
+        sessionId: '5347d3',
+        runId: 'initial',
+        hypothesisId: 'H4',
+        location: 'src/pages/Login.jsx:handleLogin:beforeSignIn',
+        message: 'Login attempt started',
+        data: {
+          activeTab,
+          identifierLength: identifier.length,
+          derivedEmailDomain: email.includes('@') ? email.split('@')[1] : null
+        },
+        timestamp: Date.now()
+      })
+    }).catch(() => {});
+    // #endregion
+
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
+
+    // #region agent log
+    fetch('http://127.0.0.1:7662/ingest/ff34898f-315f-4614-860e-a1a3f01603a4', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Debug-Session-Id': '5347d3'
+      },
+      body: JSON.stringify({
+        sessionId: '5347d3',
+        runId: 'initial',
+        hypothesisId: 'H2',
+        location: 'src/pages/Login.jsx:handleLogin:afterSignIn',
+        message: 'signInWithPassword completed',
+        data: error
+          ? {
+              hasError: true,
+              errorMessage: error.message,
+              errorStatus: error.status ?? null,
+              errorCode: error.code ?? null,
+              errorName: error.name ?? null
+            }
+          : { hasError: false },
+        timestamp: Date.now()
+      })
+    }).catch(() => {});
+    // #endregion
 
     if (error) {
       setError(error.message);
@@ -36,15 +86,21 @@ const Login = () => {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-void text-fg-primary relative p-4 overflow-hidden">
-      {/* Cosmic Glow */}
-      <div className="absolute inset-0 bg-cosmic-glow pointer-events-none z-0"></div>
+      {/* Background Elements */}
+      <div className="cosmic-background z-0"></div>
+      <div className="grid-overlay z-0"></div>
+      
+      {/* Floating glowing orbs */}
+      <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] rounded-full bg-accent-glow/20 blur-[120px] pointer-events-none z-0 animate-pulse-glow"></div>
+      <div className="absolute bottom-[-20%] right-[-10%] w-[40%] h-[40%] rounded-full bg-accent-purple/20 blur-[100px] pointer-events-none z-0 animate-pulse-glow" style={{ animationDelay: '2s' }}></div>
 
-      <div className="card w-full max-w-[440px] z-10 p-12 relative shadow-raised">
+      <div className="card glass-panel w-full max-w-[440px] z-10 p-12 relative shadow-2xl">
         <div className="flex flex-col items-center mb-8">
-          <div className="w-10 h-10 rounded-lg bg-accent-glow flex items-center justify-center mb-4">
-            <span className="text-white font-bold font-display text-xl">F</span>
+          <div className="w-12 h-12 rounded-xl bg-btn-gradient flex items-center justify-center mb-6 shadow-lg shadow-accent-glow/20">
+            <span className="text-white font-bold font-display text-2xl">F</span>
           </div>
-          <h1 className="text-h2 tracking-tight text-fg-primary">ForgeTrack</h1>
+          <h1 className="text-display-sm tracking-tight text-fg-primary font-display">ForgeTrack</h1>
+          <p className="text-fg-secondary mt-2 text-sm">Enter your credentials to access the portal</p>
         </div>
 
         {/* Tab Toggle */}
@@ -101,9 +157,9 @@ const Login = () => {
           <button
             type="submit"
             disabled={loading}
-            className="btn-primary w-full mt-2"
+            className="btn-accent w-full mt-4 h-12 text-base"
           >
-            {loading ? 'Signing in...' : 'Sign In'}
+            {loading ? 'Authenticating...' : 'Sign In'}
           </button>
         </form>
       </div>

@@ -12,10 +12,10 @@ const Sidebar = () => {
   };
 
   const navItemClass = ({ isActive }) => {
-    return `flex items-center h-[44px] px-4 rounded-lg transition-colors group relative ${
+    return `flex items-center h-[44px] px-4 rounded-xl transition-all duration-300 group relative ${
       isActive
-        ? 'bg-surface-raised text-fg-primary'
-        : 'text-fg-secondary hover:bg-surface hover:text-fg-primary'
+        ? 'bg-surface-raised text-white shadow-md border border-border-default'
+        : 'text-fg-secondary hover:bg-surface hover:text-white hover:-translate-y-px'
     }`;
   };
 
@@ -24,7 +24,7 @@ const Sidebar = () => {
       {({ isActive }) => (
         <>
           {isActive && (
-            <div className="absolute left-0 top-0 bottom-0 w-[2px] bg-accent-glow rounded-l-lg"></div>
+            <div className="absolute left-[-1px] top-1/2 -translate-y-1/2 w-[3px] h-[60%] bg-accent-glow rounded-r-full shadow-[0_0_8px_rgba(59,130,246,0.6)]"></div>
           )}
           <Icon className="w-5 h-5 mr-3 flex-shrink-0" strokeWidth={1.75} />
           <span className="text-body font-normal">{label}</span>
@@ -40,17 +40,17 @@ const Sidebar = () => {
   return (
     <div className="flex flex-col w-full h-full py-6 px-4">
       {/* Logo Area */}
-      <div className="flex items-center px-4 mb-8">
-        <div className="w-8 h-8 rounded-lg bg-accent-glow flex items-center justify-center mr-3">
-          <span className="text-white font-bold font-display">F</span>
+      <div className="flex items-center px-4 mb-8 mt-2">
+        <div className="w-10 h-10 rounded-xl bg-btn-gradient flex items-center justify-center mr-3 shadow-lg shadow-accent-glow/20">
+          <span className="text-white font-bold font-display text-xl">F</span>
         </div>
-        <span className="text-h2 text-fg-primary tracking-tight">ForgeTrack</span>
+        <span className="text-2xl font-display font-bold tracking-tight text-white">ForgeTrack</span>
       </div>
 
       {/* Welcome Block */}
       <div className="px-4 mb-6">
-        <div className="text-body-sm text-fg-secondary">Welcome Back</div>
-        <div className="text-body font-medium truncate">{user?.email}</div>
+        <div className="text-micro text-fg-secondary uppercase tracking-wider mb-1">Welcome Back</div>
+        <div className="text-sm font-medium text-white truncate">{user?.email}</div>
       </div>
 
       <div className="h-px bg-border-subtle mx-4 mb-2"></div>
@@ -91,7 +91,7 @@ const Sidebar = () => {
           <Settings className="w-5 h-5 mr-3 flex-shrink-0" strokeWidth={1.75} />
           <span className="text-body font-normal">Settings</span>
         </NavLink>
-        <button onClick={handleLogout} className="flex w-full items-center h-[44px] px-4 rounded-lg text-fg-secondary hover:bg-surface hover:text-fg-primary transition-colors">
+        <button onClick={handleLogout} className="flex w-full items-center h-[44px] px-4 mt-1 rounded-xl text-fg-secondary hover:bg-danger-bg hover:text-danger hover:border hover:border-danger-border transition-all duration-300">
           <LogOut className="w-5 h-5 mr-3 flex-shrink-0" strokeWidth={1.75} />
           <span className="text-body font-normal">Logout</span>
         </button>

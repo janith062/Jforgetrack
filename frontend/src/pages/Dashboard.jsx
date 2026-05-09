@@ -8,30 +8,24 @@ import { Calendar, Users, Activity, Clock, Plus, BarChart2 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom';
 
 const TickerStrip = ({ stats }) => (
-  <div className="flex items-center gap-6 overflow-x-auto pb-4 mb-8 border-b border-border-subtle hide-scrollbar">
-    <div className="flex items-center gap-3 min-w-max">
-      <Calendar size={16} className="text-fg-tertiary" />
-      <span className="text-caption text-fg-tertiary uppercase tracking-wider">Total Sessions</span>
-      <span className="text-body-lg font-semibold tabular-nums">{stats.totalSessions}</span>
-    </div>
-    <div className="w-[1px] h-4 bg-border-subtle" />
-    <div className="flex items-center gap-3 min-w-max">
-      <Activity size={16} className="text-fg-tertiary" />
-      <span className="text-caption text-fg-tertiary uppercase tracking-wider">Overall Attendance</span>
-      <span className="text-body-lg font-semibold tabular-nums">{stats.avgAttendance}%</span>
-    </div>
-    <div className="w-[1px] h-4 bg-border-subtle" />
-    <div className="flex items-center gap-3 min-w-max">
-      <Users size={16} className="text-fg-tertiary" />
-      <span className="text-caption text-fg-tertiary uppercase tracking-wider">Active Students</span>
-      <span className="text-body-lg font-semibold tabular-nums">{stats.activeStudents}</span>
-    </div>
-    <div className="w-[1px] h-4 bg-border-subtle" />
-    <div className="flex items-center gap-3 min-w-max">
-      <Clock size={16} className="text-fg-tertiary" />
-      <span className="text-caption text-fg-tertiary uppercase tracking-wider">Last Session</span>
-      <span className="text-body-lg font-semibold tabular-nums">{stats.lastSessionDate}</span>
-    </div>
+  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
+    {[
+      { icon: Calendar, label: 'Total Sessions', value: stats.totalSessions },
+      { icon: Activity, label: 'Avg Attendance', value: `${stats.avgAttendance}%` },
+      { icon: Users, label: 'Active Students', value: stats.activeStudents },
+      { icon: Clock, label: 'Last Session', value: stats.lastSessionDate },
+    ].map(({ icon: Icon, label, value }) => (
+      <div key={label} className="bg-surface/40 backdrop-blur-xl border border-border-subtle rounded-2xl p-5 relative overflow-hidden group hover:border-accent-glow/30 hover:shadow-lg hover:shadow-accent-glow/5 transition-all duration-300">
+        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-border-strong to-transparent" />
+        <div className="flex items-center gap-2 mb-3">
+          <div className="w-7 h-7 rounded-lg bg-accent-glow/10 border border-accent-glow/20 flex items-center justify-center">
+            <Icon size={14} className="text-accent-glow" />
+          </div>
+          <span className="text-[10px] font-semibold text-fg-tertiary uppercase tracking-[0.1em]">{label}</span>
+        </div>
+        <div className="text-2xl font-display font-bold text-white tabular-nums">{value}</div>
+      </div>
+    ))}
   </div>
 );
 
@@ -44,6 +38,8 @@ export default function Dashboard() {
   const [todayAttendance, setTodayAttendance] = useState({ loading: true, data: [] });
   const [recentActivity, setRecentActivity] = useState([]);
   const [programOverview, setProgramOverview] = useState({ highest: null, lowest: null });
+  const [studentStats, setStudentStats] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -53,7 +49,7 @@ export default function Dashboard() {
       const [sessionsRes, studentsRes, allAttendanceRes] = await Promise.all([
         supabase.from('sessions').select('*').order('date', { ascending: false }),
         supabase.from('students').select('*').eq('is_active', true),
-        supabase.from('attendance').select('*, students(name)')
+        supabase.from('attendance').select('*, students(name, usn)')
       ]);
 
       const sessions = sessionsRes.data || [];
@@ -96,6 +92,19 @@ export default function Dashboard() {
         highest: highest.name !== '-' ? `${highest.name} (${Math.round(highest.pct)}%)` : '-', 
         lowest: lowest.name !== '-' ? `${lowest.name} (${Math.round(lowest.pct)}%)` : '-' 
       });
+
+      // 1.2 Student Stats List
+      const statsList = Object.keys(studentMap).map(id => {
+        const s = studentMap[id];
+        return {
+          id,
+          name: s.name,
+          total: s.total,
+          present: s.present,
+          pct: Math.round((s.present / s.total) * 100)
+        };
+      }).sort((a, b) => b.pct - a.pct);
+      setStudentStats(statsList);
 
       // 2. Today's Sessions
       const todays = sessions.filter(s => s.date === today);
@@ -160,10 +169,21 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="max-w-[1440px] mx-auto px-6 md:px-8 lg:px-12 pt-8 pb-16 w-full animate-in fade-in duration-500">
-      <div className="mb-8">
-        <h1 className="text-display-hero text-fg-primary mb-2">Welcome Back, {user?.display_name?.split(' ')[0] || 'Mentor'}</h1>
-        <p className="text-body-sm text-fg-secondary">Last login: Today</p>
+    <div className="max-w-[1440px] mx-auto px-6 md:px-8 lg:px-12 pt-10 pb-16 w-full animate-in fade-in duration-500">
+      <div className="mb-10">
+        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-accent-glow/10 border border-accent-glow/20 text-accent-glow text-xs font-semibold uppercase tracking-wider mb-4">
+          <span className="w-1.5 h-1.5 rounded-full bg-accent-glow animate-pulse" />
+          Live Dashboard
+        </div>
+        <h1 className="text-4xl md:text-5xl font-display font-bold tracking-tight mb-2">
+          <span className="bg-gradient-to-r from-white via-white to-fg-secondary bg-clip-text text-transparent">
+            Welcome Back,{' '}
+          </span>
+          <span className="bg-gradient-to-r from-accent-glow to-accent-purple bg-clip-text text-transparent">
+            {user?.display_name?.split(' ')[0] || 'Mentor'}
+          </span>
+        </h1>
+        <p className="text-fg-secondary text-sm">Last login: Today &mdash; everything is looking great.</p>
       </div>
 
       <TickerStrip stats={stats} />
@@ -296,6 +316,78 @@ export default function Dashboard() {
               );
             })}
             {recentActivity.length === 0 && <p className="text-body text-fg-tertiary">No recent activity.</p>}
+          </div>
+        </Card>
+      </div>
+
+      {/* Detailed Student Stats */}
+      <div className="mt-6">
+        <Card>
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+            <CardHeader label="STUDENT PERFORMANCE" icon={Users} title="Detailed Attendance" />
+            <div className="relative">
+              <input 
+                type="text" 
+                placeholder="Search students..." 
+                className="input pl-10 w-full md:w-64"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+              <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-fg-tertiary" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            </div>
+          </div>
+          
+          <div className="overflow-x-auto -mx-6 px-6">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="border-b border-border-subtle">
+                  <th className="py-3 text-caption text-fg-tertiary uppercase tracking-wider">Student Name</th>
+                  <th className="py-3 text-caption text-fg-tertiary uppercase tracking-wider">Sessions</th>
+                  <th className="py-3 text-caption text-fg-tertiary uppercase tracking-wider">Progress</th>
+                  <th className="py-3 text-caption text-fg-tertiary uppercase tracking-wider text-right">Percentage</th>
+                </tr>
+              </thead>
+              <tbody>
+                {studentStats.length === 0 ? (
+                  <tr>
+                    <td colSpan={4} className="py-12 text-center text-fg-tertiary">
+                      No student data available yet. Import a CSV to see stats.
+                    </td>
+                  </tr>
+                ) : studentStats
+                  .filter(s => s.name?.toLowerCase().includes(searchQuery.toLowerCase()))
+                  .slice(0, 10)
+                  .map(s => (
+                  <tr key={s.id} className="border-b border-border-subtle hover:bg-surface-inset transition-colors group">
+                    <td className="py-4">
+                      <div className="font-medium text-fg-primary">{s.name}</div>
+                      <div className="text-caption text-fg-tertiary">ID: {s.id.slice(0, 8)}</div>
+                    </td>
+                    <td className="py-4 text-body-sm text-fg-secondary">
+                      {s.present} / {s.total}
+                    </td>
+                    <td className="py-4 w-1/3">
+                      <div className="w-full h-1.5 bg-surface-inset rounded-full overflow-hidden">
+                        <div 
+                          className={`h-full rounded-full transition-all duration-500 ${s.pct >= 85 ? 'bg-success' : s.pct >= 70 ? 'bg-warning' : 'bg-danger'}`} 
+                          style={{ width: `${s.pct}%` }}
+                        />
+                      </div>
+                    </td>
+                    <td className="py-4 text-right">
+                      <Pill status={s.pct >= 85 ? 'success' : s.pct >= 70 ? 'default' : 'danger'}>
+                        {s.pct}%
+                      </Pill>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {studentStats.length > 10 && (
+              <div className="py-4 text-center">
+                <Button variant="ghost" size="sm" onClick={() => navigate('/history')}>View All Students</Button>
+              </div>
+            )}
           </div>
         </Card>
       </div>

@@ -36,7 +36,7 @@ const TopBar = () => {
     : 'Overview';
 
   return (
-    <header className="h-[72px] flex-shrink-0 border-b border-border-subtle bg-canvas/80 backdrop-blur-md flex items-center justify-between px-6 md:px-8 z-30">
+    <header className="h-[72px] flex-shrink-0 border-b border-border-subtle bg-surface/30 backdrop-blur-xl flex items-center justify-between px-6 md:px-8 z-30">
       <div className="flex items-center text-fg-secondary text-body-sm">
         <span>Overview</span>
         <span className="mx-2">/</span>
@@ -52,7 +52,7 @@ const TopBar = () => {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             onKeyDown={handleSearch}
-            className="input !h-[36px] !pl-9 !py-1 !text-body-sm bg-surface w-[240px]"
+            className="input !h-[36px] !pl-9 !py-1 !text-body-sm bg-surface-inset w-[240px] rounded-full"
           />
         </div>
         
@@ -68,20 +68,20 @@ const TopBar = () => {
           
           <button 
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-            className="w-9 h-9 rounded-full bg-surface-raised border border-border-default flex items-center justify-center text-fg-primary font-medium hover:border-accent-glow transition-all active:scale-95"
+            className="w-10 h-10 rounded-full bg-surface border border-border-default flex items-center justify-center text-white font-medium hover:border-accent-glow hover:shadow-[0_0_15px_rgba(59,130,246,0.3)] transition-all active:scale-95"
           >
             {user?.email?.charAt(0).toUpperCase() || 'U'}
           </button>
 
           {isDropdownOpen && (
-            <div className="absolute right-0 top-full mt-2 w-48 bg-surface-raised border border-border-subtle rounded-lg shadow-raised p-1 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+            <div className="absolute right-0 top-full mt-2 w-48 glass-panel rounded-xl shadow-2xl p-1 z-50 animate-in fade-in slide-in-from-top-2 duration-200 border border-border-default">
               <div className="px-3 py-2 border-b border-border-subtle mb-1">
-                <div className="text-xs font-semibold text-fg-primary truncate">{user?.email}</div>
+                <div className="text-xs font-semibold text-white truncate">{user?.email}</div>
               </div>
               
               <button 
                 onClick={signOut}
-                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-danger-fg hover:bg-danger-bg/20 rounded-md transition-colors"
+                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-danger-fg hover:bg-danger-bg rounded-lg transition-colors"
               >
                 <LogOut size={16} />
                 <span>Logout</span>
